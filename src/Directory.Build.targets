@@ -7,4 +7,10 @@
         <EmbeddedFiles Include="$(GeneratedAssemblyInfoFile)" />
     </ItemGroup>
 
+    <!-- The packs carry no icon data unless built with -p:IconPacksEmbedIconData=true; each app assembly
+         embeds the icons it names instead, through IconPacks.Avalonia.UsedIcons/IconPacks.Avalonia.UsedIcons.targets -->
+    <ItemGroup Condition="'$(IconPacksEmbedIconData)' != 'true'">
+        <AvaloniaResource Remove="Resources/Icons.json" />
+    </ItemGroup>
+
 </Project>

@@ -1,0 +1,58 @@
+<Project>
+
+    <!--
+        Import into every project that names icons. Its build embeds the path data of each icon the project
+        names in C# or XAML: PackIcon<Pack>Kind.<Name> (also inside {x:Static}), <iconPacks:PackIcon<Pack> Kind="<Name>">
+        and {iconPacks:<Pack> <Name>}. A generated module initializer adds them to PackIconDataIndex, so an app built
+        against this fork's packs, which carry no icon data, holds only the icons it names.
+        The icon data comes from the packs' Resources/Icons.json next to this folder.
+    -->
+
+    <PropertyGroup>
+        <IconPacksPacksDirectory>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..'))</IconPacksPacksDirectory>
+    </PropertyGroup>
+
+    <UsingTask TaskName="FindUsedIcons" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Sources ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+            <PacksDirectory ParameterType="System.String" Required="true" />
+            <OutputFile ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Code Type="Class" Language="cs" Source="$(MSBuildThisFileDirectory)FindUsedIcons.cs" />
+        </Task>
+    </UsingTask>
+
+    <Target Name="IconPacksCollectUsedIconsInputs">
+        <PropertyGroup>
+            <IconPacksUsedIconsFile>$(IntermediateOutputPath)IconPacksUsedIcons.g.cs</IconPacksUsedIconsFile>
+            <IconPacksUsedIconsStamp>$(IntermediateOutputPath)IconPacksUsedIcons.stamp</IconPacksUsedIconsStamp>
+        </PropertyGroup>
+        <ItemGroup>
+            <IconPacksSource Include="@(Compile);@(AvaloniaXaml)" />
+            <IconPacksSource Include="@(AvaloniaResource)" Condition="'%(Extension)' == '.axaml' or '%(Extension)' == '.xaml'" />
+            <IconPacksSource Remove="$(IconPacksUsedIconsFile)" />
+            <IconPacksData Include="$(IconPacksPacksDirectory)IconPacks.Avalonia.*\Resources\Icons.json" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Skipped in design-time builds: the IDE doesn't need the icon data -->
+    <Target Name="IconPacksFindUsedIcons"
+            DependsOnTargets="IconPacksCollectUsedIconsInputs"
+            Condition="'$(DesignTimeBuild)' != 'true'"
+            Inputs="@(IconPacksSource);@(IconPacksData);$(MSBuildThisFileFullPath);$(MSBuildThisFileDirectory)FindUsedIcons.cs"
+            Outputs="$(IconPacksUsedIconsStamp)">
+        <FindUsedIcons Sources="@(IconPacksSource)" PacksDirectory="$(IconPacksPacksDirectory)" OutputFile="$(IconPacksUsedIconsFile)" />
+        <Touch Files="$(IconPacksUsedIconsStamp)" AlwaysCreate="true" />
+    </Target>
+
+    <Target Name="IconPacksAddUsedIcons"
+            BeforeTargets="BeforeCompile"
+            DependsOnTargets="IconPacksCollectUsedIconsInputs;IconPacksFindUsedIcons">
+        <ItemGroup>
+            <Compile Include="$(IconPacksUsedIconsFile)" Condition="Exists('$(IconPacksUsedIconsFile)')" />
+            <FileWrites Include="$(IconPacksUsedIconsFile);$(IconPacksUsedIconsStamp)" />
+        </ItemGroup>
+    </Target>
+
+</Project>

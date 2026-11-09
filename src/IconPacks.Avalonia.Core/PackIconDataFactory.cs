@@ -9,7 +9,13 @@ namespace IconPacks.Avalonia.Core
     {
         public static IDictionary<TEnum, string> Create<TEnum>() where TEnum : struct, Enum
         {
-            using var iconJsonStream = AssetLoader.Open(new Uri($"avares://{typeof(TEnum).Assembly.GetName().Name}/Resources/Icons.json"));
+            var iconsUri = IconsUri(typeof(TEnum));
+            if (!AssetLoader.Exists(iconsUri))
+            {
+                return new Dictionary<TEnum, string>();
+            }
+
+            using var iconJsonStream = AssetLoader.Open(iconsUri);
             var stringDict = JsonSerializer.Deserialize(
                                  iconJsonStream, IconJsonContext.Default.DictionaryStringString) 
                              ?? new Dictionary<string, string>();
@@ -28,7 +34,13 @@ namespace IconPacks.Avalonia.Core
         
         public static IDictionary<Enum, string> Create(Type enumType)
         {
-            using var iconJsonStream = AssetLoader.Open(new Uri($"avares://{enumType.Assembly.GetName().Name}/Resources/Icons.json"));
+            var iconsUri = IconsUri(enumType);
+            if (!AssetLoader.Exists(iconsUri))
+            {
+                return new Dictionary<Enum, string>();
+            }
+
+            using var iconJsonStream = AssetLoader.Open(iconsUri);
             var stringDict = JsonSerializer.Deserialize<Dictionary<string, string>>(
                                  iconJsonStream, IconJsonContext.Default.DictionaryStringString) 
                              ?? new Dictionary<string, string>();
@@ -48,6 +60,12 @@ namespace IconPacks.Avalonia.Core
             }
 
             return result;
+        }
+
+        // A pack built without IconPacksEmbedIconData=true has no Icons.json
+        private static Uri IconsUri(Type enumType)
+        {
+            return new Uri($"avares://{enumType.Assembly.GetName().Name}/Resources/Icons.json");
         }
     }
 }
