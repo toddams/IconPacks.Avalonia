@@ -13,8 +13,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Avalonia" Version="$(AvaloniaVersion)" />
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.202" />
+    <!-- 10.0.202 brings Microsoft.Build.Tasks.Git with GHSA-23fw-v26w-5fgq (NU1902) -->
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.114" />
     <PackageVersion Include="JetBrains.Annotations" Version="2025.2.4" />
-    <PackageVersion Include="System.Text.Json" Version="10.0.6" />
   </ItemGroup>
 </Project>
